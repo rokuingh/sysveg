@@ -30,11 +30,15 @@ def gather_source_files(datadir):
 
 def parse_pandas(files):
     import pandas as pd
+    import os
 
     for f in files:
         # split out the tracer name based on file name
         temp = f.split("-")[0]
         sub = temp.split("/")[-1]
+        subdir = os.path.join(os.path.dirname(f),"OsloAQ-processed")
+        if not os.path.exists(subdir):
+            os.mkdir(subdir)
 
         # use pandas to rearrange the columns
         f_in=pd.read_csv(f, encoding = 'utf8')
@@ -43,7 +47,7 @@ def parse_pandas(files):
         keep_col.insert(0, u"Til-tid")
         keep_col.insert(0, u"Fra-tid")
         f_out = f_in[keep_col]
-        f_out.to_csv(sub+".csv", index=False, encoding = 'utf8')
+        f_out.to_csv(os.path.join(subdir, sub+".csv"), index=False, encoding = 'utf8')
 
         print ("Processed {}").format(f)
 
