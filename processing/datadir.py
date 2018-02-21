@@ -1,0 +1,1 @@
+datadir = "/home/ryan/sandbox/sysveg/data/AirQuality/Oslo"
