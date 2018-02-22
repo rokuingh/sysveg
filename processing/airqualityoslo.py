@@ -42,11 +42,33 @@ def parse_pandas(files):
 
         # use pandas to rearrange the columns
         f_in=pd.read_csv(f, encoding = 'utf8')
-        # keep_col = [s for s in f_in.columns.values if sub in s]
+
+        # delete unwanted columns
         keep_col = [s for s in f_in.columns.values if "|" in s]
-        keep_col.insert(0, u"Til-tid")
         keep_col.insert(0, u"Fra-tid")
         f_out = f_in[keep_col]
+
+        # rename the columns with only tracer values
+        i = 0
+        newcols = f_out.columns.values
+        for col in f_out.columns.values:
+            if "|" in col:
+                newcol = col.split("|")[1]
+                newcol = newcol.strip()
+                newcols[i] = newcol
+            i = i + 1
+        f_out.columns = newcols
+
+        # split first column into two
+        # NOTE: throws warning about a copy of a slice, disregard
+        f_out['Fra-tid'], f_out['Time'] = f_out['Fra-tid'].str.split(' ', 1).str
+        
+        # move new time column to second place
+        cols = f_out.columns.tolist()
+        cols.insert(1, cols.pop(cols.index('Time')))
+        f_out = f_out[cols]
+
+        # write new csv
         f_out.to_csv(os.path.join(subdir, sub+".csv"), index=False, encoding = 'utf8')
 
         print ("Processed {}").format(f)
