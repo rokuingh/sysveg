@@ -78,5 +78,5 @@ def main(datadir):
     parse_pandas(gather_source_files(datadir))
 
 if __name__ == "__main__":
-    from datadir import datadir as datadir
+    from datadir import datadiroslo as datadir
     main(datadir)
