@@ -160,22 +160,49 @@ def parse_oslo_meteo():
                 frames.append(df)
                         
             # concatenate dataframes
-            out_df = pd.concat(frames)
-
-            # trim columns
-            keep_col = ["Date","TA 01","TA 07","TA 13","TA 19","TAM","TAX","TAN","NN 01","NN 07","NN 13","NN 19","RR 01","RR 07","RR 13","RR 19","RR"]
-            df = out_df[keep_col]
+            df = pd.concat(frames)
 
             # set index to Date column
             df.set_index("Date", inplace=True)
 
             # modify format of index
-            dates = pd.date_range('20160101', periods=366, freq='D')
-            df.set_index(dates, inplace=True)
+            dates = pd.date_range('20160101 01', periods=366*4, freq='360min')
+            
+            # we only want 6 columns
+            cols = ["TAM","TAX","TAN","TA","NN","RR"]
+            
+            # create a buffer to hold the rejiggered data
+            out = np.zeros((df.shape[0]*4,len(cols)))
+            
+            # replace x values with -1000
+            df = df.replace('x', -1000)
+            
+            # TA, NN, RR all have 4 hourly values per day
+            out[0::4,3] = df["TA 01"].values
+            out[1::4,3] = df["TA 07"].values
+            out[2::4,3] = df["TA 13"].values
+            out[3::4,3] = df["TA 19"].values
+            
+            out[0::4,4] = df["NN 01"].values
+            out[1::4,4] = df["NN 07"].values
+            out[2::4,4] = df["NN 13"].values
+            out[3::4,4] = df["NN 19"].values
+            
+            out[0::4,5] = df["RR 01"].values
+            out[1::4,5] = df["RR 07"].values
+            out[2::4,5] = df["RR 13"].values
+            out[3::4,5] = df["RR 19"].values
+            
+            # TAM, TAX, TAN all have one hourly value per day
+            out[3::4,0] = df["TAM"].values
+            out[3::4,1] = df["TAX"].values
+            out[3::4,2] = df["TAN"].values
+
+            df_out = pd.DataFrame(out, columns=cols, index=dates)
 
             # write new csv
             filename = str(value)+".csv"
-            df.to_csv(os.path.join(subdir, filename))
+            df_out.to_csv(os.path.join(subdir, filename))
 
             print ("Processed {}".format(filename))
 
