@@ -122,4 +122,4 @@ regridSrc2Dst = ESMF.Regrid(srcfield, dstfield,
 
 dstfield = regridSrc2Dst(srcfield, dstfield)
 
-print '\nregrid demo completed successfully.\n'
+print ('\nregrid demo completed successfully.\n')
