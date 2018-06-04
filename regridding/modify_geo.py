@@ -1,7 +1,9 @@
 import ocgis
 
 PATH_IN = "/home/ryan/sandbox/sysveg/data/HERMES/geo_em.d03.nc"
+PATH_IN = "/nfs/pic.es/user/r/rokuingh/sandbox/sysveg/data/HERMES/geo_em.d03.nc"
 PATH_OUT = "/home/ryan/sandbox/sysveg/data/HERMES/geo_em.d03-2.nc"
+PATH_OUT = "/nfs/pic.es/user/r/rokuingh/sandbox/sysveg/data/HERMES/geo_em.d03-2.nc"
 
 rd = ocgis.RequestDataset(PATH_IN)
 field = rd.create_field()
