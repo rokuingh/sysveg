@@ -14,7 +14,9 @@ import ESMF
 import numpy as np
 
 geo_file = "/nfs/pic.es/user/r/rokuingh/sandbox/sysveg/data/geo_em.d03.nc"
+geo_file = "/home/ryan/sandbox/sysveg/data/HERMES/geo_em.d03-2.nc"
 emi_file = "/nfs/pic.es/user/r/rokuingh/sandbox/sysveg/data/Emisiones_CAT1_2015091_UAB_4.nc"
+emi_file = "/home/ryan/sandbox/sysveg/data/HERMES/Emisiones_CAT1_2015091_UAB_4_grid.nc"
 
 plot = True
 init = True
@@ -31,7 +33,7 @@ try:
 except:
     plot = False
 
-def initialize_field(field):
+def initialize_field(field, name):
     if init:
         try:
             import netCDF4 as nc
@@ -39,14 +41,15 @@ def initialize_field(field):
             raise ImportError('netCDF4 not available on this machine')
 
         f = nc.Dataset(emi_file)
-        co2 = f.variables['CO2']
+        var = f.variables[name]
         # this should switch from [time,level,lat,lon] to [lon,lat,level,time]
-        co2 = np.swapaxes(co2,1,3)
-        co2 = np.swapaxes(co2,2,4)
-        co2 = np.swapaxes(co2,3,4)        
+        var = np.swapaxes(var,0,2)
+        var = np.swapaxes(var,1,3)
+        var = np.swapaxes(var,2,3)        
+        var = np.swapaxes(var,0,1)        
         # import pdb; pdb.set_trace()
         realdata = True
-        field.data[:] = gee[:,:,:,:]
+        field.data[:] = var[:,:,:,:]
     else:
         field.data[:] = 42.0
 
@@ -102,24 +105,32 @@ def plot_sol(srclons, srclats, srcfield, dstlons, dstlats, interpfield):
 # Start up ESMF, this call is only necessary to enable debug logging
 esmpy = ESMF.Manager(debug=True)
 
+varnames = []
+
 # Create a destination grid from a GRIDSPEC formatted file.
+print (emi_file)
 srcgrid = ESMF.Grid(filename=emi_file, filetype=ESMF.FileFormat.GRIDSPEC,
                     add_corner_stagger=False, is_sphere=False,
                     coord_names=[])
+print (geo_file)
 dstgrid = ESMF.Grid(filename=geo_file, filetype=ESMF.FileFormat.GRIDSPEC,
                     add_corner_stagger=False, is_sphere=False,
-                    coord_names=["XLONG_U", "XLAT_U"])
+                    coord_names=["XLONG_M", "XLAT_M"])
 
-srcfield = ESMF.Field(srcgrid, "srcfield", staggerloc=ESMF.StaggerLoc.CENTER, ndbounds=[11,24])
-dstfield = ESMF.Field(dstgrid, "dstfield", staggerloc=ESMF.StaggerLoc.CENTER, ndbounds=[11,24])
+firstpass = True
+for varname in varnames:
+    srcfield = ESMF.Field(srcgrid, "srcfield", staggerloc=ESMF.StaggerLoc.CENTER, ndbounds=[11,24])
+    dstfield = ESMF.Field(dstgrid, "dstfield", staggerloc=ESMF.StaggerLoc.CENTER, ndbounds=[11,24])
+    srcfield = initialize_field(srcfield, varname)
+    
+    if firstpass:
+        # Regrid from source grid to destination grid.
+        regridSrc2Dst = ESMF.Regrid(srcfield, dstfield,
+                                    regrid_method=ESMF.RegridMethod.BILINEAR,
+                                    unmapped_action=ESMF.UnmappedAction.IGNORE)
 
-srcfield = initialize_field(srcfield)
+    dstfield = regridSrc2Dst(srcfield, dstfield)
 
-# Regrid from source grid to destination grid.
-regridSrc2Dst = ESMF.Regrid(srcfield, dstfield,
-                            regrid_method=ESMF.RegridMethod.BILINEAR,
-                            unmapped_action=ESMF.UnmappedAction.ERROR)
+    firstpass = False
 
-dstfield = regridSrc2Dst(srcfield, dstfield)
-
-print '\nregrid demo completed successfully.\n'
+print ('\nregrid demo completed successfully.\n')
