@@ -1,3 +1,15 @@
+#!/usr/bin/python
+# Ryan O'Kuinghttons
+# April 22, 2018
+
+###############################################################################
+#
+#  Modify the geo grid metadata for CF compliance and regridding purposes:
+#
+#  python modify_geo.py
+#
+###############################################################################
+
 import ocgis
 
 PATH_IN = "/home/ryan/sandbox/sysveg/data/HERMES/geo_em.d03.nc"
